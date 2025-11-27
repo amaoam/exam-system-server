@@ -3,6 +3,7 @@ package com.zmt.exam.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.zmt.exam.common.Result;
+import com.zmt.exam.entity.Paper;
 import com.zmt.exam.vo.AiPaperVo;
 import com.zmt.exam.vo.PaperVo;
 import io.swagger.v3.oas.annotations.Operation;

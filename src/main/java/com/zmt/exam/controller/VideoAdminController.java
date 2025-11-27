@@ -4,6 +4,7 @@ package com.zmt.exam.controller;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.zmt.exam.common.Result;
 import com.zmt.exam.entity.Video;
+import com.zmt.exam.service.VideoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;

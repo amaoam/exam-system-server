@@ -4,6 +4,7 @@ package com.zmt.exam.controller;
 
 import com.zmt.exam.common.Result;
 import com.zmt.exam.entity.VideoCategory;
+import com.zmt.exam.service.VideoCategoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;

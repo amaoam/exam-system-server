@@ -1,6 +1,8 @@
 package com.zmt.exam.controller;
 
 import com.zmt.exam.common.Result;
+import com.zmt.exam.entity.Notice;
+import com.zmt.exam.service.NoticeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
