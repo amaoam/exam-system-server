@@ -106,19 +106,19 @@
             <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
             <version>4.4.0</version>
         </dependency>
-        <!-- 显式引入springdoc核心依赖（与Knife4j版本匹配） -->
+<!--         显式引入springdoc核心依赖（与Knife4j版本匹配） -->
 
-        <!-- Redis 缓存依赖  redis的依赖后续导入-->
-        <!--        <dependency>-->
-        <!--            <groupId>org.springframework.boot</groupId>-->
-        <!--            <artifactId>spring-boot-starter-data-redis</artifactId>-->
-        <!--        </dependency>-->
+<!--         Redis 缓存依赖  redis的依赖后续导入-->
+                <dependency>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-data-redis</artifactId>
+                </dependency>
 
-        <!-- Redis 连接池依赖 -->
-        <!--        <dependency>-->
-        <!--            <groupId>org.apache.commons</groupId>-->
-        <!--            <artifactId>commons-pool2</artifactId>-->
-        <!--        </dependency>-->
+<!--         Redis 连接池依赖 -->
+                <dependency>
+                    <groupId>org.apache.commons</groupId>
+                    <artifactId>commons-pool2</artifactId>
+                </dependency>
 
         <!-- Redisson 分布式锁 -->
         <dependency>

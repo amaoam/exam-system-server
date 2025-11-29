@@ -1,11 +1,15 @@
 package com.zmt.exam.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.esotericsoftware.minlog.Log;
 import com.zmt.exam.common.Result;
 import com.zmt.exam.entity.Question;
+import com.zmt.exam.service.QuestionService;
+import com.zmt.exam.vo.QuestionQueryVo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -39,41 +43,43 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/questions")  // 设置基础URL路径，所有方法的URL都以此开头
 @CrossOrigin(origins = "*")  // 允许跨域访问，解决前后端分离开发中的跨域问题
 @Tag(name = "题目管理", description = "题目相关的增删改查操作，包括分页查询、随机获取、热门推荐等功能")  // Swagger标签，用于分组显示API
+@RequiredArgsConstructor
 public class QuestionController {
-    
+    private  final QuestionService questionService;
     /**
      * 分页查询题目列表（支持多条件筛选）
-     * 
+     *
      * RESTful API教学：
      * - URL：GET /api/questions/list
      * - 查询参数：通过@RequestParam接收URL查询参数
      * - 默认值：通过defaultValue设置参数默认值
      * - 可选参数：通过required = false设置可选参数
-     * 
+     *
      * MyBatis Plus分页教学：
      * - Page对象：封装分页信息（页码、每页大小、总数等）
      * - QueryWrapper：动态构建查询条件，避免SQL注入
      * - 条件构建：支持等值查询(eq)、模糊查询(like)、排序(orderBy)
-     * 
+     *
      * @param page 当前页码，从1开始，默认第1页
      * @param size 每页显示数量，默认10条
-     * @param categoryId 分类ID筛选条件，可选
-     * @param difficulty 难度筛选条件（EASY/MEDIUM/HARD），可选
-     * @param type 题型筛选条件（CHOICE/JUDGE/TEXT），可选
-     * @param keyword 关键词搜索，对题目标题进行模糊查询，可选
+     * @param questionQueryVo 分类ID筛选条件，可选
      * @return 封装的分页查询结果，包含题目列表和分页信息
      */
     @GetMapping("/list")  // 映射GET请求到/api/questions/list
     @Operation(summary = "分页查询题目列表", description = "支持按分类、难度、题型、关键词进行多条件筛选的分页查询")  // Swagger接口描述
+
     public Result<Page<Question>> getQuestionList(
-            @Parameter(description = "当前页码，从1开始", example = "1") @RequestParam(defaultValue = "1") Integer page,  // 参数描述
-            @Parameter(description = "每页显示数量", example = "10") @RequestParam(defaultValue = "10") Integer size,
-            @Parameter(description = "分类ID筛选条件") @RequestParam(required = false) Long categoryId,
-            @Parameter(description = "难度筛选条件，可选值：EASY/MEDIUM/HARD") @RequestParam(required = false) String difficulty,
-            @Parameter(description = "题型筛选条件，可选值：CHOICE/JUDGE/TEXT") @RequestParam(required = false) String type,
-            @Parameter(description = "关键词搜索，对题目标题进行模糊查询") @RequestParam(required = false) String keyword) {
+            @Parameter(description = "当前页码，从1开始", example = "1")
+            @RequestParam(defaultValue = "1") Integer page,  // 参数描述
+            @Parameter(description = "每页显示数量", example = "10")
+            @RequestParam(defaultValue = "10") Integer size,
+            QuestionQueryVo questionQueryVo) {
         // 返回统一格式的成功响应
-        return Result.success(null);
+        Page<Question> pageBean = new Page<>(page,size);
+        questionService.customPageJavaSize(pageBean,questionQueryVo);
+        Log.info("分页查询数据成功！");
+        return Result.success(pageBean);
+
     }
     
     /**

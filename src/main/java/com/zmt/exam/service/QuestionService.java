@@ -1,7 +1,9 @@
 package com.zmt.exam.service;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.zmt.exam.entity.Question;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.zmt.exam.vo.QuestionQueryVo;
 
 import java.util.List;
 
@@ -29,6 +31,13 @@ import java.util.List;
  * @version 1.0
  */
 public interface QuestionService extends IService<Question> {
+    /**
+     * Java代码进行数据拼装！ 1+n -> 1+1+1  1
+     * @param pageBean
+     * @param questionQueryVo
+     */
+
+    void customPageJavaSize(Page<Question> pageBean, QuestionQueryVo questionQueryVo);
 
 
 } 
