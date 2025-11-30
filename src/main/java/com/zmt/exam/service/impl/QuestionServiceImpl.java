@@ -11,15 +11,20 @@ import com.zmt.exam.mapper.QuestionChoiceMapper;
 import com.zmt.exam.mapper.QuestionMapper;
 import com.zmt.exam.service.QuestionService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.zmt.exam.utils.ExcelUtil;
 import com.zmt.exam.utils.RedisUtils;
+import com.zmt.exam.vo.QuestionImportVo;
 import com.zmt.exam.vo.QuestionQueryVo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.language.bm.Lang;
+import org.springframework.beans.BeanUtils;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -254,6 +259,96 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
         //7. 返回即可
         return popularQuestions;
     }
+    /**
+     * 解析并预览Excel文件中的题目内容，不会导入到数据库
+     * 文件和格式校验
+     * 文件解析处理
+     * @param file
+     * @return
+     */
+    @Override
+    public List<QuestionImportVo> preViewExcel(MultipartFile file) throws IOException {
+        //数据校验
+        if(file == null || file.isEmpty()){
+            throw new RuntimeException("预览数据的文件为空！");
+        }
+        String fileName = file.getOriginalFilename();
+        //xls xlsx
+        if(!fileName.endsWith(".xls")&&!fileName.endsWith(".xlsx")){
+            throw new RuntimeException("预览数据的文件格式错误，必须是 .xls或者.xlsx！");
+        }
+        //解析数据
+        List<QuestionImportVo> questionImportVoList = ExcelUtil.parseExcel(file);
+        //返回结果
+        return questionImportVoList;
+    }
+    /**
+     * 批量题目导入 [execl和ai生成批量导入]
+     * 批量数据库添加
+     * @param questions
+     * @return Excel导入完成！成功导入 %d [工程导入] / %d [题目总数] 道题目
+     */
+    @Override
+    public int importBatchQuestions(List<QuestionImportVo> questions) {
+        //1. 进行数据校验
+        if (questions == null || questions.isEmpty()){
+            throw new RuntimeException("导入的题目集合为空！");
+        }
+        //3. 循环 + try 调用保存的方法 [部分成功]
+        int successCount = 0;
+        for(int i = 0;i<questions.size();i++){
+            try{
+                //2. 进行vo - question [提取一个方法]
+                Question question =  convertQuestionImportVoToQuestion(questions.get(i));
+                //数据单体保存
+                customSaveQuestion(question);
+                //正确数据统计
+                successCount++;
+            }catch (Exception e){
+                //导入失败的提示
+                log.debug("{}题目导入失败！",questions.get(i).getTitle());
+            }
+        }
+        return successCount;
+    }
+
+    private Question convertQuestionImportVoToQuestion(QuestionImportVo questionImportVo) {
+        //1. 给question本体属性赋值
+        Question question = new Question();
+        //question.setTitle(questionImportVo.getTitle());
+        /**
+         * 作用：给对象的属性进行赋值！根据另一个对象的相同属性值！
+         * 参数1：source 源对象 【提供值】
+         * 参数2：target 目标对象 【接收值】
+         */
+        BeanUtils.copyProperties(questionImportVo,question);
+        //2. 判断是选择，给选项集合进行赋值
+        if("CHOICE".equals(questionImportVo.getType())){
+            if(questionImportVo.getChoices().size()>0){
+                List<QuestionChoice> questionChoices = new ArrayList<>(questionImportVo.getChoices().size());
+                for(QuestionImportVo.ChoiceImportDto importVochoice : questionImportVo.getChoices()){
+                    QuestionChoice questionChoice = new QuestionChoice();
+                    questionChoice.setContent(importVochoice.getContent());
+                    questionChoice.setIsCorrect(importVochoice.getIsCorrect());
+                    questionChoice.setSort(importVochoice.getSort());
+                    questionChoices.add(questionChoice);
+                }
+                question.setChoices(questionChoices);
+            }
+        }
+        //3. 不管是不是选择题创建答案对象并赋值 【保存的时候，获取答案对象，选择题可以没有答案值，保存会判断答案值】
+        QuestionAnswer questionAnswer = new QuestionAnswer();
+        //判断题，需要将true和false转成大写！ 否则无法识别！！
+        if("JUDGE".equals(questionImportVo.getType())){
+            questionAnswer.setAnswer(questionImportVo.getAnswer().toUpperCase());
+        }else{
+            questionAnswer.setAnswer(questionImportVo.getAnswer());
+        }
+        questionAnswer.setKeywords(questionImportVo.getKeywords());
+        question.setAnswer(questionAnswer);
+        return question;
+    }
+
 
     //定义进行题目访问次数增长的方法
     //异步方法

@@ -3,17 +3,23 @@ package com.zmt.exam.controller;
 
 
 import com.zmt.exam.common.Result;
+import com.zmt.exam.service.KimiAiService;
+import com.zmt.exam.service.QuestionService;
+import com.zmt.exam.utils.ExcelUtil;
 import com.zmt.exam.vo.AiGenerateRequestVo;
 import com.zmt.exam.vo.QuestionImportVo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -25,8 +31,11 @@ import java.util.List;
 @RequestMapping("/api/questions/batch")  // 题目批量操作API路径前缀
 @CrossOrigin(origins = "*")  // 允许跨域访问
 @Tag(name = "题目批量操作", description = "题目批量管理相关操作，包括Excel导入、AI生成题目、批量验证等功能")  // Swagger API分组
+@RequiredArgsConstructor
 public class QuestionBatchController {
-    
+
+    private final QuestionService questionService;
+    private final KimiAiService kimiAiService;
 
     /**
      * 下载Excel导入模板
@@ -34,10 +43,17 @@ public class QuestionBatchController {
      */
     @GetMapping("/template")  // 处理GET请求
     @Operation(summary = "下载Excel导入模板", description = "下载题目批量导入的Excel模板文件")  // API描述
-    public ResponseEntity<byte[]> downloadTemplate() {
-      return null;
+    public ResponseEntity<byte[]> downloadTemplate() throws IOException {
+        //1.获取下载模板字节数组
+        byte[] template = ExcelUtil.generateTemplate();
+        //2.封装ResponseEntity
+        ResponseEntity<byte[]> responseEntity = ResponseEntity.ok()
+                .header("Content-Disposition","attachment;filename=question_import_template.xlsx")
+                .contentType(MediaType.APPLICATION_OCTET_STREAM) //二进制文件，不确定类型！！
+                .body(template);
+        return responseEntity;
     }
-    
+
     /**
      * 预览Excel文件内容（不入库）
      * @param file Excel文件
@@ -46,8 +62,10 @@ public class QuestionBatchController {
     @PostMapping("/preview-excel")  // 处理POST请求
     @Operation(summary = "预览Excel文件内容", description = "解析并预览Excel文件中的题目内容，不会导入到数据库")  // API描述
     public Result<List<QuestionImportVo>> previewExcel(
-            @Parameter(description = "Excel文件，支持.xls和.xlsx格式") @RequestParam("file") MultipartFile file) {
-       return null;
+            @Parameter(description = "Excel文件，支持.xls和.xlsx格式") @RequestParam("file") MultipartFile file) throws IOException {
+        List<QuestionImportVo> questionImportVoList = questionService.preViewExcel(file);
+        log.info("预览解析execl接口调用成功！题目数量：{},数据为：{}",questionImportVoList.size(),questionImportVoList);
+        return Result.success(questionImportVoList);
     }
     
     /**
@@ -70,9 +88,11 @@ public class QuestionBatchController {
     @PostMapping("/ai-generate")  // 处理POST请求
     @Operation(summary = "AI智能生成题目", description = "使用AI技术根据指定主题和要求智能生成题目，支持预览后再决定是否导入")  // API描述
     public Result<List<QuestionImportVo>> generateQuestionsByAi(
-            @RequestBody @Validated AiGenerateRequestVo request) {
-
-       return Result.error("AI生成题目失败");
+            @RequestBody @Validated AiGenerateRequestVo request) throws  InterruptedException {
+        List<QuestionImportVo> questionImportVoList = kimiAiService.aiGenerateQuestions(request);
+        log.info("使用ai生成：{} 为标题的题目成功！ 计划生成：{}道题，实际生成：{}道题！",
+                request.getTopic(),request.getCount(),questionImportVoList.size());
+        return Result.success(questionImportVoList);
     }
     
     /**
@@ -83,8 +103,9 @@ public class QuestionBatchController {
     @PostMapping("/import-questions")  // 处理POST请求
     @Operation(summary = "批量导入题目", description = "将题目列表批量导入到数据库，支持Excel解析后的导入或AI生成后的确认导入")  // API描述
     public Result<String> importQuestions(@RequestBody List<QuestionImportVo> questions) {
-
-       return Result.error("批量导入题目失败!" );
+        int successCount = questionService.importBatchQuestions(questions);
+        log.info("批量导入题目接口调用成功！ 一共：{}题目需要导入，成功导入了：{}道题！" ,questions.size(),successCount);
+        return Result.success("批量导入题目接口调用成功！ 一共：%s 题目需要导入，成功导入了：%s 道题！".formatted(questions.size(),successCount));
 
     }
     

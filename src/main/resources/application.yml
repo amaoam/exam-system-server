@@ -41,3 +41,11 @@ minio:
   access-key: 6RMyJfE8cre3c2sVnhm5
   secret-key: eZUmk17ACEpoP5LcJsKvk6Rt7MqnahttPk6SbN6F
   bucket-name: zmt-ai
+# AI 服务配置
+kimi:
+  api:
+    api-key: sk-fVUuMmU9UcmWiFrPh9BmIAT2yugGrnfX0rYAncROcFZVINkJ  # 从环境变量获取，或使用默认值
+    model: moonshot-v1-32k  # 使用8k上下文模型进行判卷
+    max-tokens: 2000  # 最大生成token数
+    temperature: 0.3  # 较低的temperature确保判卷结果稳定
+    uri: https://api.moonshot.cn/v1/chat/completions
