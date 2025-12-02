@@ -246,7 +246,7 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
             lambdaQueryWrapper.notIn(Question::getId,idsSet);
             lambdaQueryWrapper.orderByDesc(Question::getCreateTime);
             //limit diff
-            lambdaQueryWrapper.last("limit"+diff);
+            lambdaQueryWrapper.last("limit "+diff);
             List<Question> questionDiffList = list(lambdaQueryWrapper);
             log.debug("去question表中补充热门题目，题目数：{},题目内容为：{}",questionDiffList.size(),questionDiffList);
             if (questionDiffList != null && questionDiffList.size() > 0) {
