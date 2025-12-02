@@ -2,6 +2,7 @@ package com.zmt.exam.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.zmt.exam.entity.ExamRecord;
+import com.zmt.exam.vo.ExamRankingVO;
 import com.zmt.exam.vo.StartExamVo;
 import com.zmt.exam.vo.SubmitAnswerVo;
 
@@ -38,5 +39,18 @@ public interface ExamService extends IService<ExamRecord> {
      * @throws InterruptedException
      */
     ExamRecord gradeExam(Integer examRecordId) throws InterruptedException;
+    /**
+     * 删除考试记录
+     * @param id
+     */
+    void customRemoveById(Integer id);
+    /**
+     * 获取考试排行榜 - 优化版本
+     * 使用SQL关联查询，一次性获取所有需要的数据，避免N+1查询问题
+     * @param paperId 试卷ID，可选参数，不传则查询所有试卷
+     * @param limit 显示数量限制，可选参数，不传则返回所有记录
+     * @return 排行榜列表
+     */
+    List<ExamRankingVO> customGetRanking(Integer paperId, Integer limit);
 }
  

@@ -6,12 +6,14 @@ import com.zmt.exam.entity.AnswerRecord;
 import com.zmt.exam.entity.ExamRecord;
 import com.zmt.exam.entity.Paper;
 import com.zmt.exam.entity.Question;
+import com.zmt.exam.mapper.ExamMapper;
 import com.zmt.exam.mapper.ExamRecordMapper;
 import com.zmt.exam.service.AnswerRecordService;
 import com.zmt.exam.service.ExamService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.zmt.exam.service.KimiAiService;
 import com.zmt.exam.service.PaperService;
+import com.zmt.exam.vo.ExamRankingVO;
 import com.zmt.exam.vo.GradingResult;
 import com.zmt.exam.vo.StartExamVo;
 import com.zmt.exam.vo.SubmitAnswerVo;
@@ -36,6 +38,7 @@ public class ExamServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRecord> i
     private final PaperService paperService;
     private final AnswerRecordService answerRecordService;
     private final KimiAiService kimiAiService;
+    private  final ExamRecordMapper examRecordMapper;
     //开始考试
     @Transactional
     @Override
@@ -210,6 +213,31 @@ public class ExamServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRecord> i
         updateById(examRecord);
         return  examRecord;
     }
+
+    @Override
+    public void customRemoveById(Integer id) {
+        //重要的关联数据校验，有删除失败！
+        //判断自身状态，进行中不能删除
+        ExamRecord examRecord = getById(id);
+        if ("进行中".equals(examRecord.getStatus())){
+            throw new RuntimeException("正在考试中，无法直接删除！");
+        }
+        //删除自身数据，同时删除答题记录
+        removeById(id.longValue());
+        answerRecordService.remove(new LambdaQueryWrapper<AnswerRecord>().eq(AnswerRecord::getExamRecordId,id));
+    }
+    /**
+     * 获取考试排行榜 - 优化版本
+     * 使用SQL关联查询，一次性获取所有需要的数据，避免N+1查询问题
+     * @param paperId 试卷ID，可选参数，不传则查询所有试卷
+     * @param limit 显示数量限制，可选参数，不传则返回所有记录
+     * @return 排行榜列表
+     */
+    @Override
+    public List<ExamRankingVO> customGetRanking(Integer paperId, Integer limit) {
+        return examRecordMapper.customQueryRanking(paperId,limit);
+    }
+
     /**
      * 标准化判断题答案，将T/F转换为TRUE/FALSE
      * @param answer 原始答案
